@@ -12,6 +12,8 @@ import java.util.Objects;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+/* This class has the job to remap what's given into it
+ */
 public class Remapper {
     public Remapper() {
         try {
