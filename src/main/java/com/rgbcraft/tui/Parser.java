@@ -1,10 +1,9 @@
 package com.rgbcraft.tui;
 
+import com.github.javaparser.ParseProblemException;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.body.BodyDeclaration;
-import com.github.javaparser.ast.body.FieldDeclaration;
-import com.github.javaparser.ast.body.TypeDeclaration;
+import com.github.javaparser.ast.body.*;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
@@ -18,13 +17,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /* This class has the job to read the jar file and parse its content
  */
 public class Parser {
-    private final List<ParserData> data;
+    private final ConcurrentLinkedQueue<ParserData> data;
 
     public Parser() {
         try {
@@ -38,10 +38,11 @@ public class Parser {
             JarFile file = url.getJarFile();
             Enumeration<JarEntry> entries = file.entries();
 
-            data = new ArrayList<>(64);
+            this.data = new ConcurrentLinkedQueue<>();
 
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
+
                 if (entry.toString().endsWith(".java")) {
                     System.out.println(entry);
 
@@ -49,30 +50,22 @@ public class Parser {
                     combinedTypeSolver.add(new ReflectionTypeSolver());
                     JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedTypeSolver);
                     StaticJavaParser.getParserConfiguration().setSymbolResolver(symbolSolver);
+
                     JarEntry fileEntry = file.getJarEntry(entry.getName());
                     InputStream input = file.getInputStream(fileEntry);
                     BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+
                     String line;
                     StringBuilder fileContent = new StringBuilder();
                     while ((line = reader.readLine()) != null) {
                         fileContent.append(line);
                     }
+
                     try {
                         CompilationUnit cu = StaticJavaParser.parse(fileContent.toString());
-                        for (TypeDeclaration<?> type : cu.getTypes()) {
-                            String className = type.getName().asString();
-                            List<FieldDeclaration> fields = new ArrayList<>(10);
-                            for (BodyDeclaration<?> member : type.getMembers()) {
-                                if (member.isFieldDeclaration()) {
-                                    FieldDeclaration field = member.asFieldDeclaration();
-                                    System.out.println(field);
-                                }
-                            }
-
-                            data.add(new ParserData(className, fields));
-                        }
-                    } catch (Exception e) {
-//                        e.printStackTrace();
+                        cu.getTypes().parallelStream().forEach(this::parseClass);
+                    } catch (ParseProblemException e) {
+                        System.err.println("Something went wrong with the parsing");
                     }
 
                     System.out.println("\n");
@@ -81,5 +74,41 @@ public class Parser {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void parseClass(TypeDeclaration<?> type) {
+        String className = type.getName().asString();
+        List<FieldDeclaration> fields = new ArrayList<>();
+        List<MethodDeclaration> methods = new ArrayList<>();
+        List<ConstructorDeclaration> constructors = new ArrayList<>();
+        List<InitializerDeclaration> initializers = new ArrayList<>();
+        System.out.println(className);
+
+        for (BodyDeclaration<?> member : type.getMembers()) {
+            if (member.isFieldDeclaration()) {
+                FieldDeclaration field = member.asFieldDeclaration();
+                fields.add(field);
+            } else if (member.isMethodDeclaration()) {
+                MethodDeclaration method = member.asMethodDeclaration();
+                methods.add(method);
+            } else if (member.isClassOrInterfaceDeclaration()) {
+                ClassOrInterfaceDeclaration classOrInterfaceDeclaration = member.asClassOrInterfaceDeclaration();
+                parseClass(classOrInterfaceDeclaration.asTypeDeclaration());
+            } else if (member.isConstructorDeclaration()) {
+                ConstructorDeclaration constructor = member.asConstructorDeclaration();
+                constructors.add(constructor);
+            } else if (member.isTypeDeclaration()) {
+                parseClass(member.asTypeDeclaration());
+            } else if (member.isInitializerDeclaration()) {
+                InitializerDeclaration initializer = member.asInitializerDeclaration();
+                initializers.add(initializer);
+            }
+        }
+
+        this.data.add(new ParserData(className, fields, methods, constructors, initializers));
+    }
+
+    public ConcurrentLinkedQueue<ParserData> getData() {
+        return this.data;
     }
 }

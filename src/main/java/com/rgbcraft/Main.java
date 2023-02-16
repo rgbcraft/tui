@@ -11,7 +11,7 @@ public class Main {
         Parser parser = new Parser();
 
         // TODO: create a Remapper instance
-//        Remapper remapper = new Remapper();
+//        Remapper remapper = new Remapper(parser);
 
         // TODO: create a Packager instance
         Packager packager = new Packager();
