@@ -2,6 +2,9 @@ package com.rgbcraft.tui;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.BodyDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
@@ -12,13 +15,17 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /* This class has the job to read the jar file and parse its content
  */
 public class Parser {
+    private final List<ParserData> data;
+
     public Parser() {
         try {
             URL urlSrg = getClass().getResource("/client.srg");
@@ -30,6 +37,9 @@ public class Parser {
             JarURLConnection url = (JarURLConnection) new URL("jar:file://" + urlJar.getPath() + "!/").openConnection();
             JarFile file = url.getJarFile();
             Enumeration<JarEntry> entries = file.entries();
+
+            data = new ArrayList<>(64);
+
             while (entries.hasMoreElements()) {
                 JarEntry entry = entries.nextElement();
                 if (entry.toString().endsWith(".java")) {
@@ -49,9 +59,20 @@ public class Parser {
                     }
                     try {
                         CompilationUnit cu = StaticJavaParser.parse(fileContent.toString());
-                        System.out.println(cu.getImports());
+                        for (TypeDeclaration<?> type : cu.getTypes()) {
+                            String className = type.getName().asString();
+                            List<FieldDeclaration> fields = new ArrayList<>(10);
+                            for (BodyDeclaration<?> member : type.getMembers()) {
+                                if (member.isFieldDeclaration()) {
+                                    FieldDeclaration field = member.asFieldDeclaration();
+                                    System.out.println(field);
+                                }
+                            }
+
+                            data.add(new ParserData(className, fields));
+                        }
                     } catch (Exception e) {
-                        e.printStackTrace();
+//                        e.printStackTrace();
                     }
 
                     System.out.println("\n");
