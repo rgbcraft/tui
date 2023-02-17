@@ -2,9 +2,7 @@ package com.rgbcraft.tui;
 
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
-import com.github.javaparser.ast.expr.CastExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.*;
 import org.cadixdev.lorenz.MappingSet;
 import org.cadixdev.lorenz.io.MappingFormats;
 import org.cadixdev.lorenz.io.MappingsReader;
@@ -54,9 +52,7 @@ public class Remapper {
             VariableDeclarator variable = field.getVariables().getFirst().get();
             Optional<Expression> initializerExpression = variable.getInitializer();
 
-            if (initializerExpression.isPresent()) {
-                this.mapExpression(initializerExpression.get());
-            }
+            initializerExpression.ifPresent(this::mapExpression);
 
             System.out.println(variable.getInitializer());
             String name = variable.getNameAsString();
@@ -76,7 +72,6 @@ public class Remapper {
 
                 variable.setName(fieldMapping.getSimpleDeobfuscatedName());
             }));
-
         }).collect(Collectors.toList());
     }
 
@@ -84,18 +79,53 @@ public class Remapper {
         if (expression.isCastExpr()) {
             CastExpr castExpr = expression.asCastExpr();
             Optional<? extends ClassMapping<?, ?>> classMapping = mappings.getClassMapping(castExpr.getTypeAsString());
-            if (classMapping.isPresent()) {
-                System.out.println("HERE CHANGED");
-                castExpr.setType(classMapping.get().getSimpleDeobfuscatedName());
-            }
+            classMapping.ifPresent(mapping -> castExpr.setType(mapping.getSimpleDeobfuscatedName()));
         } else if (expression.isMethodCallExpr()) {
             // TODO: this is so messy + map it
-
             MethodCallExpr methodCallExpr = expression.asMethodCallExpr();
+
             if (methodCallExpr.getScope().isPresent()) {
                 mapExpression(methodCallExpr.getScope().get());
             }
+
+            for (Expression arg : methodCallExpr.getArguments()) {
+                mapExpression(arg);
+            }
+
             System.out.println("Scope: " + methodCallExpr.getScope() + "; Name: " + methodCallExpr.getName() + "!!!");
+        } else if (expression.isObjectCreationExpr()) {
+            ObjectCreationExpr objectCreationExpr = expression.asObjectCreationExpr();
+            if (objectCreationExpr.getScope().isPresent()) {
+                mapExpression(objectCreationExpr.getScope().get());
+            }
+
+            for (Expression arg : objectCreationExpr.getArguments()) {
+                mapExpression(arg);
+            }
+
+            String name = objectCreationExpr.getType().getNameAsString();
+
+            Optional<? extends ClassMapping<?, ?>> classMapping = mappings.getClassMapping(name);
+            classMapping.ifPresent(mapping -> objectCreationExpr.setType(mapping.getSimpleDeobfuscatedName()));
+
+            System.out.println("Object: " + objectCreationExpr + "???");
+        } else if (expression.isFieldAccessExpr()) {
+            // TODO: get the class which is accessed for this field access
+            FieldAccessExpr fieldAccessExpr = expression.asFieldAccessExpr();
+
+            mapExpression(fieldAccessExpr.getScope());
+
+            System.out.println("Field: " + fieldAccessExpr.getName().getIdentifier());
+        } else if (expression.isClassExpr()) {
+            ClassExpr classExpr = expression.asClassExpr();
+
+            mappings.getClassMapping(classExpr.getTypeAsString())
+                    .ifPresent((classMapping -> classExpr.setType(classMapping.getSimpleDeobfuscatedName())));
+        } else if (expression.isNameExpr()) {
+            NameExpr nameExpr = expression.asNameExpr();
+
+            mappings.getClassMapping(nameExpr.getNameAsString())
+                    .ifPresent((classMapping -> nameExpr.setName(classMapping.getSimpleDeobfuscatedName())));
         }
     }
 }
