@@ -1,15 +1,18 @@
 package com.rgbcraft.tui;
 
+import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.InitializerDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ParserData {
     private String className;
     private String packageName;
+    private List<ImportDeclaration> imports;
     private List<FieldDeclaration> fields;
     private final List<MethodDeclaration> methods;
     private final List<ConstructorDeclaration> constructors;
@@ -21,6 +24,7 @@ public class ParserData {
         this.methods = methods;
         this.constructors = constructors;
         this.initializers = initializers;
+        this.imports = new ArrayList<>();
     }
 
     public String getClassName() {
@@ -37,6 +41,14 @@ public class ParserData {
 
     public void setPackageName(String packageName) {
         this.packageName = packageName;
+    }
+
+    public List<ImportDeclaration> getImports() {
+        return this.imports;
+    }
+
+    public void setImports(List<ImportDeclaration> imports) {
+        this.imports = imports;
     }
 
     public List<FieldDeclaration> getFields() {

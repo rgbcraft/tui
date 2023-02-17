@@ -1,17 +1,18 @@
 package com.rgbcraft.tui;
 
-import com.github.javaparser.ParseProblemException;
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParseResult;
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.*;
+import com.github.javaparser.resolution.TypeSolver;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.TypeSolverBuilder;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -56,11 +57,12 @@ public class Parser {
                         fileContent.append(line);
                     }
 
-                    try {
-                        CompilationUnit cu = StaticJavaParser.parse(fileContent.toString());
+                    TypeSolver typeSolver = new TypeSolverBuilder().withJAR(new File("/client.jar")).build();
+                    JavaParser javaParser = new JavaParser(new ParserConfiguration().setSymbolResolver(new JavaSymbolSolver(typeSolver)));
+                    ParseResult<CompilationUnit> parsed = javaParser.parse(reader);
+                    if (parsed.isSuccessful() && parsed.getResult().isPresent()) {
+                        CompilationUnit cu = parsed.getResult().get();
                         cu.getTypes().parallelStream().forEach(this::parseClass);
-                    } catch (ParseProblemException e) {
-//                        System.err.println("Something went wrong with the parsing");
                     }
                 }
             }

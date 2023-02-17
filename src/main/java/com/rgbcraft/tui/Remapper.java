@@ -11,6 +11,7 @@ import org.cadixdev.lorenz.model.ClassMapping;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
@@ -116,6 +117,8 @@ public class Remapper {
 
             String type = resolveExpression(fieldAccessExpr.getScope());
 
+            System.out.println("Field type: " + type);
+
             mapExpression(fieldAccessExpr.getScope());
 
             System.out.println("Field: " + fieldAccessExpr.getName().getIdentifier());
@@ -163,7 +166,15 @@ public class Remapper {
             return classExpr.getType().asString();
         } else if (expression.isFieldAccessExpr()) {
             FieldAccessExpr fieldAccessExpr = expression.asFieldAccessExpr();
-            return this.mappings(resolveExpression(fieldAccessExpr.getScope()));
+            Optional<? extends ClassMapping<?, ?>> classMapping = this.mappings.getClassMapping(resolveExpression(fieldAccessExpr.getScope()));
+
+            if (classMapping.isPresent()) {
+                List<?> fields = classMapping.get().getFieldMappings().stream().filter((fieldMapping -> Objects.equals(fieldMapping.getObfuscatedName(), fieldAccessExpr.getName().getIdentifier()))).collect(Collectors.toList());
+                if (fields.size() > 0) {
+                    return classMapping.get().getSimpleDeobfuscatedName();
+                }
+
+            }
         }
 
         return "";
