@@ -40,9 +40,9 @@ public class Remapper {
         if (parserData == null) return false;
 
         this.mappings.getClassMapping(parserData.getClassName()).ifPresent((classMapping) -> {
-            parserData.setClassName(classMapping.getSimpleDeobfuscatedName());
+            parserData.setClassName(classMapping.getDeobfuscatedName());
             parserData.setPackageName(classMapping.getDeobfuscatedPackage());
-            
+
             parserData.setFields(mapFields(parserData.getFields(), classMapping));
         });
         return true;
@@ -163,7 +163,7 @@ public class Remapper {
             return classExpr.getType().asString();
         } else if (expression.isFieldAccessExpr()) {
             FieldAccessExpr fieldAccessExpr = expression.asFieldAccessExpr();
-            return "";
+            return this.mappings(resolveExpression(fieldAccessExpr.getScope()));
         }
 
         return "";
