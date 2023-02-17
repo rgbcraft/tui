@@ -97,7 +97,7 @@ public class Parser {
             }
         }
 
-        this.data.add(new ParserData(className, fields, methods, constructors, initializers));
+        this.data.add(new ParserData(className, "", fields, methods, constructors, initializers));
     }
 
     public ConcurrentLinkedQueue<ParserData> getData() {
