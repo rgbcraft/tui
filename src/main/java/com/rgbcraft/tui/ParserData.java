@@ -8,8 +8,8 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import java.util.List;
 
 public class ParserData {
-    private final String className;
-    private final List<FieldDeclaration> fields;
+    private String className;
+    private List<FieldDeclaration> fields;
     private final List<MethodDeclaration> methods;
     private final List<ConstructorDeclaration> constructors;
     private final List<InitializerDeclaration> initializers;
@@ -26,8 +26,16 @@ public class ParserData {
         return className;
     }
 
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
     public List<FieldDeclaration> getFields() {
         return fields;
+    }
+
+    public void setFields(List<FieldDeclaration> fields) {
+        this.fields = fields;
     }
 
     public List<MethodDeclaration> getMethods() {

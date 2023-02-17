@@ -28,9 +28,6 @@ public class Parser {
 
     public Parser() {
         try {
-            URL urlSrg = getClass().getResource("/client.srg");
-            if (urlSrg == null) throw new NullPointerException("Can't find client.srg");
-
             URL urlJar = getClass().getResource("/client.jar");
             if (urlJar == null) throw new NullPointerException("Can't find client.jar");
 
@@ -44,8 +41,6 @@ public class Parser {
                 JarEntry entry = entries.nextElement();
 
                 if (entry.toString().endsWith(".java")) {
-                    System.out.println(entry);
-
                     CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
                     combinedTypeSolver.add(new ReflectionTypeSolver());
                     JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedTypeSolver);
@@ -65,10 +60,8 @@ public class Parser {
                         CompilationUnit cu = StaticJavaParser.parse(fileContent.toString());
                         cu.getTypes().parallelStream().forEach(this::parseClass);
                     } catch (ParseProblemException e) {
-                        System.err.println("Something went wrong with the parsing");
+//                        System.err.println("Something went wrong with the parsing");
                     }
-
-                    System.out.println("\n");
                 }
             }
         } catch (IOException e) {
@@ -82,7 +75,6 @@ public class Parser {
         List<MethodDeclaration> methods = new ArrayList<>();
         List<ConstructorDeclaration> constructors = new ArrayList<>();
         List<InitializerDeclaration> initializers = new ArrayList<>();
-        System.out.println(className);
 
         for (BodyDeclaration<?> member : type.getMembers()) {
             if (member.isFieldDeclaration()) {
