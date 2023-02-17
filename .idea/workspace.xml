@@ -4,22 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7ef65dee-2672-464e-9700-bd56f8361e67" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradlew" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradlew.bat" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/settings.gradle" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/rgbcraft/Main.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/rgbcraft/tui/Remapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/client.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/client.srg" afterDir="false" />
+    <list default="true" id="7ef65dee-2672-464e-9700-bd56f8361e67" name="Changes" comment="Added the field mapper + started working on the expression mapper">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,14 +27,22 @@
       </list>
     </option>
   </component>
+  <component name="FormatOnSaveOptions">
+    <option name="myRunOnSave" value="true" />
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="OptimizeOnSaveOptions">
+    <option name="myRunOnSave" value="true" />
+  </component>
   <component name="ProjectId" id="2LmoFBhkyxMwH9y87SfZ7Mj5Yez" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -54,16 +51,29 @@
   "keyToString": {
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "last_opened_file_path": "/home/lorenzo/Projects/tui/src/main/resources"
+    "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "/home/enn3/dev/Java/tui/src/main/resources",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "actions.on.save",
+    "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/main/resources" />
     </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/main/resources" />
+    </key>
   </component>
   <component name="RunManager">
-    <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+    <configuration name="Main" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.rgbcraft.Main" />
       <module name="tui.main" />
       <extension name="coverage">
@@ -76,11 +86,6 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Application.Main" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -90,7 +95,66 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1676485512992</updated>
+      <workItem from="1676486721504" duration="420000" />
+      <workItem from="1676567215482" duration="8643000" />
+      <workItem from="1676578550921" duration="3441000" />
+      <workItem from="1676582038629" duration="4000" />
+      <workItem from="1676632697460" duration="6862000" />
     </task>
+    <task id="LOCAL-00001" summary="Added first tests">
+      <created>1676570486385</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1676570486385</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Added initialization of the parsed data">
+      <created>1676571607686</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1676571607686</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Finished the Parser">
+      <created>1676581787703</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1676581787703</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Added the field mapper + started working on the expression mapper">
+      <created>1676639461777</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1676639461778</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Added first tests" />
+    <MESSAGE value="Added initialization of the parsed data" />
+    <MESSAGE value="Finished the Parser" />
+    <MESSAGE value="Added the field mapper + started working on the expression mapper" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added the field mapper + started working on the expression mapper" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>
