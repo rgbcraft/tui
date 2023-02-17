@@ -3,7 +3,6 @@ package com.rgbcraft.tui;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ParserConfiguration;
-import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.resolution.TypeSolver;
@@ -12,7 +11,10 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSol
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.TypeSolverBuilder;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -42,11 +44,6 @@ public class Parser {
                 JarEntry entry = entries.nextElement();
 
                 if (entry.toString().endsWith(".java")) {
-                    CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver();
-                    combinedTypeSolver.add(new ReflectionTypeSolver());
-                    JavaSymbolSolver symbolSolver = new JavaSymbolSolver(combinedTypeSolver);
-                    StaticJavaParser.getParserConfiguration().setSymbolResolver(symbolSolver);
-
                     JarEntry fileEntry = file.getJarEntry(entry.getName());
                     InputStream input = file.getInputStream(fileEntry);
                     BufferedReader reader = new BufferedReader(new InputStreamReader(input));
@@ -57,9 +54,12 @@ public class Parser {
                         fileContent.append(line);
                     }
 
-                    TypeSolver typeSolver = new TypeSolverBuilder().withJAR(new File("/client.jar")).build();
-                    JavaParser javaParser = new JavaParser(new ParserConfiguration().setSymbolResolver(new JavaSymbolSolver(typeSolver)));
-                    ParseResult<CompilationUnit> parsed = javaParser.parse(reader);
+                    CombinedTypeSolver solver = new CombinedTypeSolver();
+                    solver.add(new ReflectionTypeSolver());
+                    TypeSolver typeSolver = new TypeSolverBuilder().withSourceCode(getClass().getResource("/client/").getPath()).build();
+                    solver.add(typeSolver);
+                    JavaParser javaParser = new JavaParser(new ParserConfiguration().setSymbolResolver(new JavaSymbolSolver(solver)));
+                    ParseResult<CompilationUnit> parsed = javaParser.parse(fileContent.toString());
                     if (parsed.isSuccessful() && parsed.getResult().isPresent()) {
                         CompilationUnit cu = parsed.getResult().get();
                         cu.getTypes().parallelStream().forEach(this::parseClass);

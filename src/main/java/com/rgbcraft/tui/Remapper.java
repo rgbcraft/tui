@@ -3,10 +3,13 @@ package com.rgbcraft.tui;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.resolution.UnsolvedSymbolException;
 import org.cadixdev.lorenz.MappingSet;
 import org.cadixdev.lorenz.io.MappingFormats;
 import org.cadixdev.lorenz.io.MappingsReader;
 import org.cadixdev.lorenz.model.ClassMapping;
+import org.cadixdev.lorenz.model.FieldMapping;
+import org.cadixdev.lorenz.model.MethodMapping;
 
 import java.io.IOException;
 import java.net.URL;
@@ -36,9 +39,13 @@ public class Remapper {
         }
     }
 
-    public boolean mapClass() {
+    public boolean hasMoreClasses() {
+        return this.data.size() > 0;
+    }
+
+    public void mapClass() {
         ParserData parserData = this.data.poll();
-        if (parserData == null) return false;
+        if (parserData == null) return;
 
         this.mappings.getClassMapping(parserData.getClassName()).ifPresent((classMapping) -> {
             parserData.setClassName(classMapping.getDeobfuscatedName());
@@ -46,7 +53,6 @@ public class Remapper {
 
             parserData.setFields(mapFields(parserData.getFields(), classMapping));
         });
-        return true;
     }
 
     private List<FieldDeclaration> mapFields(List<FieldDeclaration> fields, ClassMapping<?, ?> classMapping) {
@@ -86,8 +92,18 @@ public class Remapper {
             // TODO: this is so messy + map it
             MethodCallExpr methodCallExpr = expression.asMethodCallExpr();
 
-            if (methodCallExpr.getScope().isPresent()) {
-                mapExpression(methodCallExpr.getScope().get());
+            try {
+                if (methodCallExpr.getScope().isPresent()) {
+                    Optional<? extends ClassMapping<?, ?>> classMapping = mappings.getClassMapping(methodCallExpr.getScope().get().calculateResolvedType().describe());
+                    if (classMapping.isPresent()) {
+                        Optional<MethodMapping> methodMapping = classMapping.get().getMethodMapping(methodCallExpr.getName().asString(), methodCallExpr.resolve().toDescriptor());
+                        if (methodMapping.isPresent()) {
+                            methodCallExpr.setName(methodMapping.get().getSimpleDeobfuscatedName());
+                        }
+                    }
+                    mapExpression(methodCallExpr.getScope().get());
+                }
+            } catch (IllegalStateException | UnsolvedSymbolException ignored) {
             }
 
             for (Expression arg : methodCallExpr.getArguments()) {
@@ -112,16 +128,19 @@ public class Remapper {
 
             System.out.println("Object: " + objectCreationExpr + "???");
         } else if (expression.isFieldAccessExpr()) {
-            // TODO: get the class which is accessed for this field access
             FieldAccessExpr fieldAccessExpr = expression.asFieldAccessExpr();
 
-            String type = resolveExpression(fieldAccessExpr.getScope());
-
-            System.out.println("Field type: " + type);
+            try {
+                Optional<? extends ClassMapping<?, ?>> classMapping = mappings.getClassMapping(fieldAccessExpr.getScope().calculateResolvedType().describe());
+                classMapping.ifPresent(mapping -> {
+                    Optional<FieldMapping> fieldMapping = mapping.getFieldMapping(fieldAccessExpr.getName().getIdentifier());
+                    fieldMapping.ifPresent(value -> fieldAccessExpr.setName(value.getDeobfuscatedName()));
+                });
+            } catch (UnsolvedSymbolException e) {
+                e.printStackTrace();
+            }
 
             mapExpression(fieldAccessExpr.getScope());
-
-            System.out.println("Field: " + fieldAccessExpr.getName().getIdentifier());
         } else if (expression.isClassExpr()) {
             ClassExpr classExpr = expression.asClassExpr();
 

@@ -43,3 +43,4 @@ bin/
 
 src/main/resources/client.jar
 .idea
+src/main/resources/client
