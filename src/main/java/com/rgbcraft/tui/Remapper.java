@@ -41,7 +41,8 @@ public class Remapper {
 
         this.mappings.getClassMapping(parserData.getClassName()).ifPresent((classMapping) -> {
             parserData.setClassName(classMapping.getSimpleDeobfuscatedName());
-
+            parserData.setPackageName(classMapping.getDeobfuscatedPackage());
+            
             parserData.setFields(mapFields(parserData.getFields(), classMapping));
         });
         return true;
@@ -113,6 +114,8 @@ public class Remapper {
             // TODO: get the class which is accessed for this field access
             FieldAccessExpr fieldAccessExpr = expression.asFieldAccessExpr();
 
+            String type = resolveExpression(fieldAccessExpr.getScope());
+
             mapExpression(fieldAccessExpr.getScope());
 
             System.out.println("Field: " + fieldAccessExpr.getName().getIdentifier());
@@ -126,6 +129,43 @@ public class Remapper {
 
             mappings.getClassMapping(nameExpr.getNameAsString())
                     .ifPresent((classMapping -> nameExpr.setName(classMapping.getSimpleDeobfuscatedName())));
+        } else if (expression.isEnclosedExpr()) {
+            EnclosedExpr enclosedExpr = expression.asEnclosedExpr();
+            mapExpression(enclosedExpr.getInner());
+        } else if (expression.isArrayCreationExpr()) {
+            ArrayCreationExpr arrayCreationExpr = expression.asArrayCreationExpr();
+            arrayCreationExpr.getInitializer().ifPresent(this::mapExpression);
+            mappings.getClassMapping(arrayCreationExpr.getElementType().asString())
+                    .ifPresent(classMapping -> arrayCreationExpr.setElementType(classMapping.getSimpleDeobfuscatedName()));
+        } else if (expression.isArrayInitializerExpr()) {
+            ArrayInitializerExpr arrayInitializerExpr = expression.asArrayInitializerExpr();
+            for (Expression value : arrayInitializerExpr.getValues()) {
+                mapExpression(value);
+            }
+            System.out.println("IniArr: " + arrayInitializerExpr);
+        } else if (expression.isMethodReferenceExpr()) {
+            MethodReferenceExpr methodReferenceExpr = expression.asMethodReferenceExpr();
+            System.out.println("Reference: " + methodReferenceExpr);
+        } else if (expression.isAssignExpr()) {
+            AssignExpr assignExpr = expression.asAssignExpr();
+            System.out.println("Assign: " + assignExpr);
+        } else if (expression.isBinaryExpr()) {
+            BinaryExpr binaryExpr = expression.asBinaryExpr();
+            mapExpression(binaryExpr.getLeft());
+            mapExpression(binaryExpr.getRight());
+            System.out.println("Binary: " + binaryExpr);
         }
+    }
+
+    private String resolveExpression(Expression expression) {
+        if (expression.isClassExpr()) {
+            ClassExpr classExpr = expression.asClassExpr();
+            return classExpr.getType().asString();
+        } else if (expression.isFieldAccessExpr()) {
+            FieldAccessExpr fieldAccessExpr = expression.asFieldAccessExpr();
+            return "";
+        }
+
+        return "";
     }
 }
