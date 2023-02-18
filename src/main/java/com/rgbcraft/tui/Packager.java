@@ -11,6 +11,8 @@ public class Packager {
     }
 
     public void run() {
-        while (remapper.mapClass()) ;
+        while (remapper.hasMoreClasses()) {
+            remapper.mapClass();
+        }
     }
 }

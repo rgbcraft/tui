@@ -4,11 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7ef65dee-2672-464e-9700-bd56f8361e67" name="Changes" comment="Added the field mapper + started working on the expression mapper">
+    <list default="true" id="7ef65dee-2672-464e-9700-bd56f8361e67" name="Changes" comment="feat: trying to resolve type resolver&#10;feat: added `imports` to `ParserData`">
       <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/rgbcraft/tui/Packager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/rgbcraft/tui/Packager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/rgbcraft/tui/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/rgbcraft/tui/Parser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/rgbcraft/tui/Remapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/rgbcraft/tui/Remapper.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,6 +50,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "ASKED_MARK_IGNORED_FILES_AS_EXCLUDED": "true",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
@@ -99,7 +101,8 @@
       <workItem from="1676567215482" duration="8643000" />
       <workItem from="1676578550921" duration="3441000" />
       <workItem from="1676582038629" duration="4000" />
-      <workItem from="1676632697460" duration="6862000" />
+      <workItem from="1676632697460" duration="6942000" />
+      <workItem from="1676651197002" duration="19579000" />
     </task>
     <task id="LOCAL-00001" summary="Added first tests">
       <created>1676570486385</created>
@@ -129,7 +132,42 @@
       <option name="project" value="LOCAL" />
       <updated>1676639461778</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Added `.idea` to .gitignore">
+      <created>1676639581563</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1676639581563</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Added some more expression type to `mapExpression`">
+      <created>1676653762412</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1676653762412</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Stuff">
+      <created>1676660468054</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1676660468054</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Fixed deobfuscated name">
+      <created>1676660811209</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1676660811209</updated>
+    </task>
+    <task id="LOCAL-00009" summary="feat: trying to resolve type resolver&#10;feat: added `imports` to `ParserData`">
+      <created>1676664955354</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1676664955354</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -151,7 +189,12 @@
     <MESSAGE value="Added initialization of the parsed data" />
     <MESSAGE value="Finished the Parser" />
     <MESSAGE value="Added the field mapper + started working on the expression mapper" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added the field mapper + started working on the expression mapper" />
+    <MESSAGE value="Added `.idea` to .gitignore" />
+    <MESSAGE value="Added some more expression type to `mapExpression`" />
+    <MESSAGE value="Stuff" />
+    <MESSAGE value="Fixed deobfuscated name" />
+    <MESSAGE value="feat: trying to resolve type resolver&#10;feat: added `imports` to `ParserData`" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: trying to resolve type resolver&#10;feat: added `imports` to `ParserData`" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
