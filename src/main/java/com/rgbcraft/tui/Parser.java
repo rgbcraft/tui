@@ -38,6 +38,22 @@ public class Parser {
             JarFile file = url.getJarFile();
             Enumeration<JarEntry> entries = file.entries();
 
+            CombinedTypeSolver solver = new CombinedTypeSolver();
+            solver.add(new ReflectionTypeSolver());
+            TypeSolver typeSolver = new TypeSolverBuilder()
+                    .withSourceCode(getClass().getResource("/client/").getPath())
+//                    .withJAR(urlJar.getPath())
+                    .withCurrentJRE()
+//                    .withCurrentClassloader()
+                    .build();
+            solver.add(typeSolver);
+            ParserConfiguration parserConfiguration = new ParserConfiguration();
+            parserConfiguration.setSymbolResolver(new JavaSymbolSolver(solver));
+            parserConfiguration.setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_7);
+            parserConfiguration.setStoreTokens(true);
+            parserConfiguration.setLexicalPreservationEnabled(true);
+            JavaParser javaParser = new JavaParser(parserConfiguration);
+
             this.data = new ConcurrentLinkedQueue<>();
 
             while (entries.hasMoreElements()) {
@@ -54,11 +70,6 @@ public class Parser {
                         fileContent.append(line);
                     }
 
-                    CombinedTypeSolver solver = new CombinedTypeSolver();
-                    solver.add(new ReflectionTypeSolver());
-                    TypeSolver typeSolver = new TypeSolverBuilder().withSourceCode(getClass().getResource("/client/").getPath()).build();
-                    solver.add(typeSolver);
-                    JavaParser javaParser = new JavaParser(new ParserConfiguration().setSymbolResolver(new JavaSymbolSolver(solver)));
                     ParseResult<CompilationUnit> parsed = javaParser.parse(fileContent.toString());
                     if (parsed.isSuccessful() && parsed.getResult().isPresent()) {
                         CompilationUnit cu = parsed.getResult().get();

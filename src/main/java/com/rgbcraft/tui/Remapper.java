@@ -108,6 +108,9 @@ public class Remapper {
             try {
                 if (scope.isPresent()) {
                     Expression scopeExpr = scope.get();
+                    if (scopeExpr.isEnclosedExpr()) {
+                        scopeExpr = scopeExpr.asEnclosedExpr().getInner();
+                    }
                     ResolvedType resolvedType = scopeExpr.calculateResolvedType();
                     System.out.println("Test: " + resolvedType.describe() + " " + resolvedType.isReferenceType());
                     Optional<? extends ClassMapping<?, ?>> classMapping = mappings.getClassMapping(resolvedType.describe());
