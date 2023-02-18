@@ -1,9 +1,11 @@
 package com.rgbcraft.tui;
 
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.resolution.UnsolvedSymbolException;
+import com.github.javaparser.resolution.types.ResolvedType;
 import org.cadixdev.lorenz.MappingSet;
 import org.cadixdev.lorenz.io.MappingFormats;
 import org.cadixdev.lorenz.io.MappingsReader;
@@ -14,7 +16,6 @@ import org.cadixdev.lorenz.model.MethodMapping;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
@@ -25,6 +26,8 @@ public class Remapper {
     private final ConcurrentLinkedQueue<ParserData> data;
     private final MappingSet mappings;
 
+    private int idx;
+
     public Remapper(Parser parser) {
         try {
             URL urlSrg = getClass().getResource("/client.srg");
@@ -34,17 +37,18 @@ public class Remapper {
 
             this.data = parser.getData();
             this.mappings = reader.read();
+            this.idx = 0;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public boolean hasMoreClasses() {
-        return this.data.size() > 0;
+        return this.idx < this.data.size();
     }
 
     public void mapClass() {
-        ParserData parserData = this.data.poll();
+        ParserData parserData = (ParserData) this.data.toArray()[this.idx++];
         if (parserData == null) return;
 
         this.mappings.getClassMapping(parserData.getClassName()).ifPresent((classMapping) -> {
@@ -56,13 +60,16 @@ public class Remapper {
     }
 
     private List<FieldDeclaration> mapFields(List<FieldDeclaration> fields, ClassMapping<?, ?> classMapping) {
-        return fields.stream().peek((field) -> {
-            VariableDeclarator variable = field.getVariables().getFirst().get();
+        return fields.stream().peek(field -> {
+            VariableDeclarator variable = field.getVariables().get(0);
+            VariableDeclarator clone = variable.clone();
             Optional<Expression> initializerExpression = variable.getInitializer();
 
-            initializerExpression.ifPresent(this::mapExpression);
+            if (initializerExpression.isPresent()) {
+                clone.setInitializer(mapExpression(initializerExpression.get()));
+            }
 
-            System.out.println(variable.getInitializer());
+            System.out.println(clone.getInitializer());
             String name = variable.getNameAsString();
             String type = variable.getTypeAsString();
             boolean isArray = type.endsWith("[]");
@@ -74,97 +81,150 @@ public class Remapper {
                 Optional<? extends ClassMapping<?, ?>> innerClassMapping = mappings.getClassMapping(finalType);
 
                 if (innerClassMapping.isPresent()) {
-                    if (isArray) variable.setType(innerClassMapping.get().getSimpleDeobfuscatedName() + "[]");
-                    else variable.setType(innerClassMapping.get().getSimpleDeobfuscatedName());
+                    if (isArray) clone.setType(innerClassMapping.get().getSimpleDeobfuscatedName() + "[]");
+                    else clone.setType(innerClassMapping.get().getSimpleDeobfuscatedName());
                 }
 
-                variable.setName(fieldMapping.getSimpleDeobfuscatedName());
+                clone.setName(fieldMapping.getSimpleDeobfuscatedName());
             }));
         }).collect(Collectors.toList());
     }
 
-    private void mapExpression(Expression expression) {
+    private Expression mapExpression(Expression expression) {
         if (expression.isCastExpr()) {
             CastExpr castExpr = expression.asCastExpr();
+            CastExpr clone = castExpr.clone();
             Optional<? extends ClassMapping<?, ?>> classMapping = mappings.getClassMapping(castExpr.getTypeAsString());
-            classMapping.ifPresent(mapping -> castExpr.setType(mapping.getSimpleDeobfuscatedName()));
+            classMapping.ifPresent(mapping -> clone.setType(mapping.getSimpleDeobfuscatedName()));
+
+            return clone;
         } else if (expression.isMethodCallExpr()) {
             // TODO: this is so messy + map it
             MethodCallExpr methodCallExpr = expression.asMethodCallExpr();
+            MethodCallExpr clone = methodCallExpr.clone();
+
+            Optional<Expression> scope = methodCallExpr.getScope();
 
             try {
-                if (methodCallExpr.getScope().isPresent()) {
-                    Optional<? extends ClassMapping<?, ?>> classMapping = mappings.getClassMapping(methodCallExpr.getScope().get().calculateResolvedType().describe());
+                if (scope.isPresent()) {
+                    Expression scopeExpr = scope.get();
+                    ResolvedType resolvedType = scopeExpr.calculateResolvedType();
+                    System.out.println("Test: " + resolvedType.describe() + " " + resolvedType.isReferenceType());
+                    Optional<? extends ClassMapping<?, ?>> classMapping = mappings.getClassMapping(resolvedType.describe());
                     if (classMapping.isPresent()) {
+                        System.out.println("STILL HERE1");
                         Optional<MethodMapping> methodMapping = classMapping.get().getMethodMapping(methodCallExpr.getName().asString(), methodCallExpr.resolve().toDescriptor());
+                        System.out.println("STILL HERE2");
                         if (methodMapping.isPresent()) {
-                            methodCallExpr.setName(methodMapping.get().getSimpleDeobfuscatedName());
+                            clone.setName(methodMapping.get().getSimpleDeobfuscatedName());
                         }
                     }
-                    mapExpression(methodCallExpr.getScope().get());
                 }
-            } catch (IllegalStateException | UnsolvedSymbolException ignored) {
+                System.out.println("PASSED");
+            } catch (IllegalStateException e) {
+                System.out.println("ERRR");
+                e.printStackTrace();
             }
 
+            if (scope.isPresent()) {
+                clone.setScope(mapExpression(scope.get()));
+            }
+
+            NodeList<Expression> args = new NodeList<>();
             for (Expression arg : methodCallExpr.getArguments()) {
-                mapExpression(arg);
+                args.add(mapExpression(arg));
             }
+            clone.setArguments(args);
 
-            System.out.println("Scope: " + methodCallExpr.getScope() + "; Name: " + methodCallExpr.getName() + "!!!");
+            System.out.println("Scope: " + clone.getScope() + "; Name: " + clone.getName() + "!!!");
+            return clone;
         } else if (expression.isObjectCreationExpr()) {
             ObjectCreationExpr objectCreationExpr = expression.asObjectCreationExpr();
+            ObjectCreationExpr clone = objectCreationExpr.clone();
+
             if (objectCreationExpr.getScope().isPresent()) {
-                mapExpression(objectCreationExpr.getScope().get());
+                clone.setScope(mapExpression(objectCreationExpr.getScope().get()));
             }
 
+            NodeList<Expression> args = new NodeList<>();
             for (Expression arg : objectCreationExpr.getArguments()) {
-                mapExpression(arg);
+                args.add(mapExpression(arg));
             }
+            clone.setArguments(args);
 
             String name = objectCreationExpr.getType().getNameAsString();
 
             Optional<? extends ClassMapping<?, ?>> classMapping = mappings.getClassMapping(name);
-            classMapping.ifPresent(mapping -> objectCreationExpr.setType(mapping.getSimpleDeobfuscatedName()));
+            classMapping.ifPresent(mapping -> clone.setType(mapping.getSimpleDeobfuscatedName()));
 
-            System.out.println("Object: " + objectCreationExpr + "???");
+            System.out.println("Object: " + clone + "???");
+            return clone;
         } else if (expression.isFieldAccessExpr()) {
             FieldAccessExpr fieldAccessExpr = expression.asFieldAccessExpr();
+            FieldAccessExpr clone = fieldAccessExpr.clone();
 
             try {
                 Optional<? extends ClassMapping<?, ?>> classMapping = mappings.getClassMapping(fieldAccessExpr.getScope().calculateResolvedType().describe());
                 classMapping.ifPresent(mapping -> {
                     Optional<FieldMapping> fieldMapping = mapping.getFieldMapping(fieldAccessExpr.getName().getIdentifier());
-                    fieldMapping.ifPresent(value -> fieldAccessExpr.setName(value.getDeobfuscatedName()));
+                    fieldMapping.ifPresent(value -> clone.setName(value.getDeobfuscatedName()));
                 });
             } catch (UnsolvedSymbolException e) {
                 e.printStackTrace();
             }
 
-            mapExpression(fieldAccessExpr.getScope());
+            clone.setScope(mapExpression(fieldAccessExpr.getScope()));
+
+            return clone;
         } else if (expression.isClassExpr()) {
             ClassExpr classExpr = expression.asClassExpr();
+            ClassExpr clone = classExpr.clone();
 
             mappings.getClassMapping(classExpr.getTypeAsString())
-                    .ifPresent((classMapping -> classExpr.setType(classMapping.getSimpleDeobfuscatedName())));
+                    .ifPresent((classMapping -> clone.setType(classMapping.getSimpleDeobfuscatedName())));
+
+            return clone;
         } else if (expression.isNameExpr()) {
             NameExpr nameExpr = expression.asNameExpr();
+            NameExpr clone = nameExpr.clone();
 
             mappings.getClassMapping(nameExpr.getNameAsString())
-                    .ifPresent((classMapping -> nameExpr.setName(classMapping.getSimpleDeobfuscatedName())));
+                    .ifPresent((classMapping -> clone.setName(classMapping.getSimpleDeobfuscatedName())));
+
+            return clone;
         } else if (expression.isEnclosedExpr()) {
             EnclosedExpr enclosedExpr = expression.asEnclosedExpr();
-            mapExpression(enclosedExpr.getInner());
+            EnclosedExpr clone = enclosedExpr.clone();
+
+            clone.setInner(mapExpression(enclosedExpr.getInner()));
+
+            return clone;
         } else if (expression.isArrayCreationExpr()) {
             ArrayCreationExpr arrayCreationExpr = expression.asArrayCreationExpr();
-            arrayCreationExpr.getInitializer().ifPresent(this::mapExpression);
+            ArrayCreationExpr clone = arrayCreationExpr.clone();
+
+            Optional<ArrayInitializerExpr> arrayInitializerExpr = arrayCreationExpr.getInitializer();
+
+            if (arrayInitializerExpr.isPresent()) {
+                clone.setInitializer((ArrayInitializerExpr) mapExpression(arrayInitializerExpr.get()));
+            }
+
             mappings.getClassMapping(arrayCreationExpr.getElementType().asString())
-                    .ifPresent(classMapping -> arrayCreationExpr.setElementType(classMapping.getSimpleDeobfuscatedName()));
+                    .ifPresent(classMapping -> clone.setElementType(classMapping.getSimpleDeobfuscatedName()));
+
+            return clone;
         } else if (expression.isArrayInitializerExpr()) {
             ArrayInitializerExpr arrayInitializerExpr = expression.asArrayInitializerExpr();
+            ArrayInitializerExpr clone = arrayInitializerExpr.clone();
+
+            NodeList<Expression> values = new NodeList<>();
             for (Expression value : arrayInitializerExpr.getValues()) {
-                mapExpression(value);
+                values.add(mapExpression(value));
             }
-            System.out.println("IniArr: " + arrayInitializerExpr);
+            clone.setValues(values);
+
+            System.out.println("IniArr: " + clone);
+            return clone;
         } else if (expression.isMethodReferenceExpr()) {
             MethodReferenceExpr methodReferenceExpr = expression.asMethodReferenceExpr();
             System.out.println("Reference: " + methodReferenceExpr);
@@ -173,29 +233,15 @@ public class Remapper {
             System.out.println("Assign: " + assignExpr);
         } else if (expression.isBinaryExpr()) {
             BinaryExpr binaryExpr = expression.asBinaryExpr();
-            mapExpression(binaryExpr.getLeft());
-            mapExpression(binaryExpr.getRight());
-            System.out.println("Binary: " + binaryExpr);
-        }
-    }
+            BinaryExpr clone = binaryExpr.clone();
 
-    private String resolveExpression(Expression expression) {
-        if (expression.isClassExpr()) {
-            ClassExpr classExpr = expression.asClassExpr();
-            return classExpr.getType().asString();
-        } else if (expression.isFieldAccessExpr()) {
-            FieldAccessExpr fieldAccessExpr = expression.asFieldAccessExpr();
-            Optional<? extends ClassMapping<?, ?>> classMapping = this.mappings.getClassMapping(resolveExpression(fieldAccessExpr.getScope()));
+            clone.setLeft(mapExpression(binaryExpr.getLeft()));
+            clone.setRight(mapExpression(binaryExpr.getRight()));
 
-            if (classMapping.isPresent()) {
-                List<?> fields = classMapping.get().getFieldMappings().stream().filter((fieldMapping -> Objects.equals(fieldMapping.getObfuscatedName(), fieldAccessExpr.getName().getIdentifier()))).collect(Collectors.toList());
-                if (fields.size() > 0) {
-                    return classMapping.get().getSimpleDeobfuscatedName();
-                }
-
-            }
+            System.out.println("Binary: " + clone);
+            return clone;
         }
 
-        return "";
+        return expression;
     }
 }
